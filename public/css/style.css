@@ -1,0 +1,68 @@
+.title-brand {
+    font-family: "inter", sans-serif;
+}
+
+*,
+body {
+    font-family: "Montserrat", sans-serif;
+}
+
+.subtitle-auth {
+    font-family: "Poppins", sans-serif !important;
+}
+
+.photo-profile {
+    width: 180px;
+    height: 180px;
+}
+
+.photo-profile-comment {
+    width: 45px !important;
+    height: 45px !important;
+}
+
+.display-post img {
+    object-fit: contain;
+    background-position: center;
+    width: 100% !important;
+    height: 80vh !important;
+}
+
+.modal-dialog-scrollable {
+    max-width: 70vw;
+}
+
+input:active,
+input:focus,
+input:hover,
+input:visited,
+input.active,
+input.focus,
+input.hover,
+input.visited,
+button:active,
+button:focus,
+button:hover,
+button:visited,
+button.active,
+button.focus,
+button.hover,
+button.visited {
+    box-shadow: unset !important;
+    outline: 0 !important;
+}
+
+.nav-link.active {
+    color: white;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .photo-profile {
+        width: 100px;
+        height: 100px;
+    }
+    .modal-dialog {
+        max-width: 100%;
+    }
+}

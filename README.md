@@ -1,7 +1,7 @@
-Social App
+<h1>Social App</h1>
 Social App adalah aplikasi media sosial sederhana yang terinspirasi dari Instagram. Aplikasi ini memiliki fitur-fitur dasar seperti signup/signin, edit profil, upload gambar, komentar pada postingan, dan like pada postingan.
 
-Fitur
+<h1>Fitur</h1>
 Signup/Signin: Pengguna dapat membuat akun baru atau masuk dengan akun yang sudah ada.
 Edit Profil: Pengguna dapat mengedit informasi profil mereka.
 Upload Post Gambar: Pengguna dapat mengunggah gambar sebagai postingan.

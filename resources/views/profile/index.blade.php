@@ -262,9 +262,11 @@
             @endif
             <div class="d-flex justify-content-between d-md-none align-items-center col-8">
                 <p class="fs-5 fw-bold">{{ $post->count() }} <span class="d-block fs-6 fw-normal">Posts</span></p>
-                <p class="fs-5 fw-bold">{{ $follower->count() }} <span class="d-block fs-6 fw-normal">Followers</span>
+                <p class="fs-5 fw-bold" data-bs-toggle="modal" data-bs-target="#followerModal">{{ $follower->count() }}
+                    <span class="d-block fs-6 fw-normal">Followers</span>
                 </p>
-                <p class="fs-5 fw-bold">{{ $following->count() }} <span class="d-block fs-6 fw-normal">Following</span>
+                <p class="fs-5 fw-bold" data-bs-toggle="modal" data-bs-target="#followingModal">{{ $following->count() }}
+                    <span class="d-block fs-6 fw-normal">Following</span>
                 </p>
             </div>
         </div>
@@ -284,19 +286,25 @@
                     @php
                         $isFollowing = \App\Models\Follow::where('follower_id', Auth::id())
                             ->where('following_id', $users->id)
+                            ->where('status', 1)
+                            ->exists();
+                        $isRequest = \App\Models\Follow::where('follower_id', Auth::id())
+                            ->where('following_id', $users->id)
+                            ->where('status', 0)
                             ->exists();
                     @endphp
                     <button
-                        class="btn {{ $isFollowing ? 'btn-secondary' : 'btn-primary' }} follow-btn py-1 px-3 fw-semibold"
+                        class="btn {{ $isFollowing ? 'btn-secondary' : ($isRequest ? 'btn-secondary' : 'btn-primary') }} follow-btn py-1 px-3 fw-semibold"
                         data-following-id="{{ $users->id }}">
-                        {{ $isFollowing ? 'Unfollow' : 'Follow' }}
-                    </button>
+                        {{ $isFollowing ? 'Unfollow' : ($isRequest ? 'Requested' : 'Follow') }} </button>
                 @endif
             </div>
             <div class="d-flex gap-0 gap-md-3 mb-2">
                 <p class="fs-5"><span class="fw-semibold">{{ $post->count() }}</span> Posts</p>
-                <p class="fs-5"><span class="fw-semibold">{{ $follower->count() }}</span> Followers</p>
-                <p class="fs-5"><span class="fw-semibold">{{ $following->count() }}</span> Following</p>
+                <a class="fs-5 nav-link" data-bs-toggle="modal" data-bs-target="#followerModal"><span
+                        class="fw-semibold">{{ $follower->where('status', 1)->count() }}</span> Followers</a>
+                <p class="fs-5" data-bs-toggle="modal" data-bs-target="#followingModal"><span
+                        class="fw-semibold">{{ $following->where('status', 1)->count() }}</span> Following</p>
             </div>
             <p class="text-start">{{ $users->bio }}
             </p>
@@ -315,37 +323,52 @@
                         Post</button>
                 </div>
             @else
-                @php
-                    $isFollowing = \App\Models\Follow::where('follower_id', Auth::id())
-                        ->where('following_id', $users->id)
-                        ->exists();
-                @endphp
                 <div class="px-2">
                     <button
-                        class="btn {{ $isFollowing ? 'btn-secondary' : 'btn-primary' }} follow-btn py-1 px-3 fw-semibold col-12"
+                        class="btn {{ $isFollowing ? 'btn-secondary' : ($isRequest ? 'btn-secondary' : 'btn-primary') }} follow-btn py-1 px-3 fw-semibold col-12"
                         data-following-id="{{ $users->id }}">
-                        {{ $isFollowing ? 'Unfollow' : 'Follow' }}
+                        {{ $isFollowing ? 'Unfollow' : ($isRequest ? 'Requested' : 'Follow') }}
                     </button>
                 </div>
             @endif
         </div>
     </div>
-
-    <div class="text-center mt-3 row gap-2 column-gap-0 col-md-11 col-xl-8 mx-auto border-top pt-1">
-        @foreach ($post as $item)
-            @php
-                $userImage = App\Models\User::where('id', $item->user_id)->value('img');
-                $userName = App\Models\User::where('id', $item->user_id)->value('name');
-            @endphp
-            <div class="col-4 myDiv px-1" data-bs-toggle="modal" data-bs-target="#postModal" data-id="{{ $item->id }}"
-                data-img=" {{ '/' . $item->img }}" data-img-detail=" {{ '/' . $userImage }}"
-                data-user="{{ $userName }}" data-caption="{{ $item->caption }}">
-                <div class="ratio ratio-1x1">
-                    <img src="{{ asset($item->img) }}" class="img-fluid" style="object-fit: cover" alt="...">
-                </div>
+    @php
+        $following = App\Models\Follow::where('following_id', $users->id)
+            ->where('follower_id', $user->id)
+            ->where('status', 1)
+            ->first();
+        $isPost = App\Models\Post::where('user_id', $users->id)->first();
+    @endphp
+    @if ($users->private == 0 or $users->id == $user->id or $following)
+        @if ($isPost)
+            <div class="text-center mt-3 row gap-2 column-gap-0 col-md-11 col-xl-8 mx-auto border-top pt-1"
+                onclick="window.location.href='{{ route('post', ['id' => $users->id]) }}'">
+                @foreach ($post as $item)
+                    @php
+                        $userImage = App\Models\User::where('id', $item->user_id)->value('img');
+                        $userName = App\Models\User::where('id', $item->user_id)->value('name');
+                    @endphp
+                    <div class="col-4 myDiv px-1" data-id="{{ $item->id }}" data-img=" {{ '/' . $item->img }}"
+                        data-img-detail=" {{ '/' . $userImage }}" data-user="{{ $userName }}"
+                        data-caption="{{ $item->caption }}">
+                        <div class="ratio ratio-1x1">
+                            <img src="{{ asset($item->img) }}" class="img-fluid" style="object-fit: cover" alt="...">
+                        </div>
+                    </div>
+                @endforeach
             </div>
-        @endforeach
-    </div>
+        @else
+            <div class="text-center mt-3 border-top">
+                <h3 class="mt-3 pt-5 text-white">No Post Yet.</h3>
+            </div>
+        @endif
+    @else
+        <div class="text-center mt-3 border-top">
+            <p class="mt-3 pt-5 text-white">This account is private.</p>
+            <span class="text-muted d-block">Follow to see their share.</span>
+        </div>
+    @endif
 
     <!-- Modal Upload Post-->
     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -386,6 +409,7 @@
                 <div class="modal-body p-0 row">
                     <div class="col-12 col-lg-6 border-end pe-lg-0 display-post sticky-top d-none d-lg-block">
                         <img src="" alt="" id="img" class="h-lg-100 sticky-top">
+
                     </div>
                     <div class="col-12 col-lg-6 pt-2 ps-2 ps-lg-0">
                         <div class="h-100">
@@ -393,8 +417,15 @@
                             <div
                                 class="mb-4 border-bottom py-2 mt-0 border-secondary d-none d-lg-flex ps-2 sticky-top bg-dark">
                                 <div class="col-2 col-xxl-1">
-                                    <img src="" alt="" id="img-detail" class="rounded-circle me-1"
-                                        width="45px" height="45px" style="object-fit: cover">
+                                    @if ($users->img)
+                                        <img src="" alt="" id="img-detail" class="rounded-circle me-1"
+                                            width="45px" height="45px" style="object-fit: cover">
+                                    @else
+                                        <img src="{{ asset('blank-profile.jpg') }}" id="img-detail" alt=""
+                                            class="rounded-circle" width="45px" height="45px"
+                                            style="object-fit: cover">
+                                    @endif
+
                                 </div>
                                 <div class="col-10 col-xxl-11 align-self-center mb-0">
                                     <p id="username" class="fw-semibold mb-0 text-white">
@@ -407,8 +438,14 @@
 
                             <div class="ps-2 mb-4 d-none d-lg-flex">
                                 <div class="col-2 col-xxl-1">
-                                    <img src="" alt="" id="img-detail-1" class="rounded-circle me-1"
-                                        width="45px" height="45px" style="object-fit: cover">
+                                    @if ($users->img)
+                                        <img src="" alt="" id="img-detail-1" class="rounded-circle me-1"
+                                            width="45px" height="45px" style="object-fit: cover">
+                                    @else
+                                        <img src="{{ asset('blank-profile.jpg') }}" id="img-detail-1" alt=""
+                                            class="rounded-circle me-1" width="45px" height="45px"
+                                            style="object-fit: cover">
+                                    @endif
                                 </div>
                                 <div class="col-10 col-xxl-11 align-self-center">
                                     <p class="text-white mb-0">
@@ -483,6 +520,110 @@
                         <button type="submit" class="btn btn-light col-12 mx-auto fw-semibold">Save</button>
 
                     </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Follower-->
+    <div class="modal fade" id="followerModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-body">
+                    <div class="d-flex mb-3 justify-content-center text-center">
+
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Followers</h1>
+
+                    </div>
+                    @php
+                        $followers = App\Models\Follow::where('following_id', $users->id)
+                            ->where('status', 1)
+                            ->get();
+                    @endphp
+                    @foreach ($followers as $item)
+                        @php
+                            $follower = App\Models\User::where('id', $item->follower_id)->first();
+                        @endphp
+                        <div class="d-flex justify-content-between mb-3">
+
+                            <div class="d-flex align-item-center gap-3">
+                                @if ($follower->img)
+                                    <img src="{{ asset($follower->img) }}" alt="" class="rounded-circle"
+                                        width="50px" height="50px" style="object-fit: cover">
+                                @else
+                                    <img src="{{ asset('blank-profile.jpg') }}" alt="" class="rounded-circle"
+                                        width="50px" height="50px" style="object-fit: cover">
+                                @endif
+                                <a href="{{ route('profile', ['id' => $follower->id]) }}"
+                                    class="nav-link align-self-center text-white fw-semibold">{{ $follower->name }}</a>
+                            </div>
+                            <div class="col-lg-4 col-xl-3 align-self-center text-end">
+                                @php
+                                    $isFollowing = \App\Models\Follow::where('follower_id', Auth::id())
+                                        ->where('following_id', $follower->id)
+                                        ->exists();
+                                @endphp
+                                <button class="btn {{ $isFollowing ? 'btn-secondary' : 'btn-primary' }} follow-btn"
+                                    data-following-id="{{ $follower->id }}">
+                                    {{ $isFollowing ? 'Unfollow' : 'Follow' }}
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Following-->
+    <div class="modal fade" id="followingModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-body">
+                    <div class="d-flex mb-3 justify-content-center text-center">
+
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Following</h1>
+
+                    </div>
+                    @php
+                        $followings = App\Models\Follow::where('follower_id', $users->id)
+                            ->where('status', 1)
+                            ->get();
+                    @endphp
+                    @foreach ($followings as $item)
+                        @php
+                            $follow = App\Models\User::where('id', $item->following_id)->first();
+                        @endphp
+                        <div class="d-flex justify-content-between mb-5">
+
+                            <div class="d-flex align-item-center gap-3">
+                                @if ($follow->img)
+                                    <img src="{{ asset($follow->img) }}" alt="" class="rounded-circle"
+                                        width="50px" height="50px" style="object-fit: cover">
+                                @else
+                                    <img src="{{ asset('blank-profile.jpg') }}" alt="" class="rounded-circle"
+                                        width="50px" height="50px" style="object-fit: cover">
+                                @endif
+                                <a href="{{ route('profile', ['id' => $follow->id]) }}"
+                                    class="nav-link align-self-center text-white fw-semibold">{{ $follow->name }}</a>
+                            </div>
+                            <div class="col-lg-4 col-xl-3 align-self-center text-end">
+                                @php
+                                    $isFollowing = \App\Models\Follow::where('follower_id', Auth::id())
+                                        ->where('following_id', $follow->id)
+                                        ->exists();
+                                @endphp
+                                <button class="btn {{ $isFollowing ? 'btn-secondary' : 'btn-primary' }} follow-btn"
+                                    data-following-id="{{ $follow->id }}">
+                                    {{ $isFollowing ? 'Unfollow' : 'Follow' }}
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
 
             </div>

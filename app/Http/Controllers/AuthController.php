@@ -15,6 +15,43 @@ class AuthController extends Controller
     public function register() {
         return view("auth.register");
     }
+    public function resetPassword() {
+        return view("auth.reset-password");
+    }
+    public function doReset(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            return response()->json(['success' => true, 'email' => $user->email]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Email not found.']);
+        
+    }
+
+    public function newPassword(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email|exists:users,email',
+                'password' => 'required|confirmed',
+            ]);
+    
+            $user = User::where('email', $request->email)->first();
+            $user->password = Hash::make($request->password);
+            $user->save();
+    
+            return redirect()->route('login')->with('success', 'Password has been reset successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Gagal ubah group. Error: ' . $e->getMessage());
+        }
+    }
 
     public function doLogin(Request $request)
     {
@@ -73,6 +110,6 @@ class AuthController extends Controller
     {
         $userName = Auth::user()->name;
         Auth::logout(); // menghapus session yang aktif
-        return redirect()->intended('/')->with('success', 'Sampai bertemu kembali ' . $userName);
+        return redirect()->route('login')->with('success', 'Sampai bertemu kembali ' . $userName);
     }
 }

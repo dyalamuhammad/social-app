@@ -57,6 +57,10 @@ button.visited {
     font-weight: bold;
 }
 
+.fs-7 {
+    font-size: 12px;
+}
+
 @media (max-width: 768px) {
     .photo-profile {
         width: 100px;

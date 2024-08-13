@@ -27,48 +27,7 @@ class ProfileController extends Controller
         $following = Follow::where('follower_id', $id)->get();
         $follower = Follow::where('following_id', $id)->get();
         return view('profile.index', compact('user','users', 'post', 'following', 'follower', 'title'));
-    }
-
-    // post
-    public function storePost(Request $request) {
-        $obj = new Post();
-        $obj->user_id = $request->user_id;
-        $obj->img = $request->img;
-        $obj->caption = $request->caption;
-        
-        if ($request->img) {
-            date_default_timezone_set('Asia/Jakarta');
-            $imageName = date('dmYHis') . '.' .$request->img->extension();
-            $imagePath = 'post/';
-            $request->img->move(public_path($imagePath), $imageName);
-            $imgPath = 'post/' . $imageName;
-    
-            $obj->img = $imgPath;
-        }
-
-        $obj->save();
-    }
-    public function doValidate($request) {
-        $model = [
-            'user_id' => 'required',
-            'img' => 'required',
-            'caption' => 'required',
-        ];
-           
-        $request->validate($model);
-    }
-    public function post(Request $request) {
-        try {
-            $this->doValidate($request);     
-            $this->storePost($request);
-    
-            return redirect()->back()
-                ->with('success', 'Berhasil menambahkan post');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal menambahkan post. Error: ' . $e->getMessage());
-        }
-    }
+    }    
 
     public function updateProfile(Request $request) {
         try { 
@@ -110,46 +69,32 @@ class ProfileController extends Controller
         }
     }
 
-    public function softDelete(Request $request) {
+    public function togglePrivate(Request $request)
+    {
         try {
-            $obj = Post::where('id', $request->id)->first();
-            $obj->delete();
-        return redirect()->back()
-                ->with('success', 'Berhasil delete post');
+
+            $user = Auth::user();
+            $obj = User::find($user->id);
+            $obj->private = $request->private;
+            $obj->save();
+            
+            return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Gagal delete post. Error: ' . $e->getMessage());
+                ->with('error', 'Gagal update profile. Error: ' . $e->getMessage());
         }
     }
 
-    // comment
-    public function storeComment(Request $request) {
-        $obj = new Comment();
-        $obj->post_id = $request->post_id;
-        $obj->user_id = $request->user_id;
-        $obj->desc = $request->desc;  
+    public function post(Request $request, $id)
+    {
+        $user = Auth::user();
+        $users = User::where('id', $id)->first();
+        $title = 'Posts';
+        $post = Post::where('user_id', $id)->orderBy('updated_at', 'desc')->get();
+        $following = Follow::where('follower_id', $id)->get();
+        $follower = Follow::where('following_id', $id)->get();
+        return view('profile.post', compact('user','users', 'post', 'following', 'follower', 'title'));
+    }  
 
-        $obj->save();
-    }
-    public function doValidateComment($request) {
-        $model = [
-            'post_id' => 'required',
-            'user_id' => 'required',
-            'desc' => 'required',
-        ];
-           
-        $request->validate($model);
-    }
-    public function comment(Request $request) {
-        try {
-            $this->doValidateComment($request);     
-            $this->storeComment($request);
     
-            return redirect()->back()
-                ->with('success', 'Berhasil menambahkan comment');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal menambahkan comment. Error: ' . $e->getMessage());
-        }
-    }
 }

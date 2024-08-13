@@ -27,6 +27,7 @@
                             if (data.status === 'followed') {
                                 button.textContent = 'Unfollow';
                                 button.className = 'btn btn-secondary follow-btn';
+                                console.log(data.isfollow)
                             } else if (data.status === 'unfollowed') {
                                 button.textContent = 'Follow';
                                 button.className = 'btn btn-primary follow-btn';
@@ -51,8 +52,9 @@
     <div class="px-lg-5 px-1 mt-5">
         @foreach ($users as $item)
             <div class="d-flex justify-content-between align-items-center rounded-3 gap-3 border p-3 mb-3"
-                onclick="window.location.href='{{ route('profile', ['id' => $item->id]) }}'" style="cursor: pointer;">
-                <div class="d-flex align-item-center gap-3">
+                style="cursor: pointer;">
+                <div class="d-flex align-item-center gap-3"
+                    onclick="window.location.href='{{ route('profile', ['id' => $item->id]) }}'">
                     @if ($item->img)
                         <img src="{{ asset($item->img) }}" alt="" class="rounded-circle" width="50px"
                             height="50px" style="object-fit: cover">
@@ -67,11 +69,17 @@
                     @php
                         $isFollowing = \App\Models\Follow::where('follower_id', Auth::id())
                             ->where('following_id', $item->id)
+                            ->where('status', 1)
+                            ->exists();
+                        $isRequest = \App\Models\Follow::where('follower_id', Auth::id())
+                            ->where('following_id', $item->id)
+                            ->where('status', 0)
                             ->exists();
                     @endphp
-                    <button class="btn {{ $isFollowing ? 'btn-secondary' : 'btn-primary' }} follow-btn"
+                    <button
+                        class="btn {{ $isFollowing ? 'btn-secondary' : ($isRequest ? 'btn-secondary' : 'btn-primary') }} follow-btn"
                         data-following-id="{{ $item->id }}">
-                        {{ $isFollowing ? 'Unfollow' : 'Follow' }}
+                        {{ $isFollowing ? 'Unfollow' : ($isRequest ? 'Requested' : 'Follow') }}
                     </button>
                 </div>
             </div>
